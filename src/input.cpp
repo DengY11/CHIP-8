@@ -12,13 +12,11 @@ static const SDL_Keycode keymap[16] = {
     SDLK_z, SDLK_x, SDLK_c, SDLK_v,  // Z X C V
 };
 
-void Chip8Keypad::handleInput() {
+bool Chip8Keypad::handleInput() {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
         if (event.type == SDL_QUIT) {
-            // Handle quit event if necessary
-            // For now, we just exit the loop
-            break;
+            return false;  // Signal to quit
         }
 
         for (int i = 0; i < 16; ++i) {
@@ -31,6 +29,7 @@ void Chip8Keypad::handleInput() {
             }
         }
     }
+    return true;  // Continue running
 }
 
 void Chip8Keypad::setKey(uint8_t key, bool pressed) {

@@ -1,5 +1,28 @@
 #include "chip8.hpp"
+
+#include <iomanip>
+#include <iostream>
 #include <random>
+
+// Fontset for CHIP-8
+static const uint8_t fontset[80] = {
+    0xF0, 0x90, 0x90, 0x90, 0xF0,  // 0
+    0x20, 0x60, 0x20, 0x20, 0x70,  // 1
+    0xF0, 0x10, 0xF0, 0x80, 0xF0,  // 2
+    0xF0, 0x10, 0xF0, 0x10, 0xF0,  // 3
+    0x90, 0x90, 0xF0, 0x10, 0x10,  // 4
+    0xF0, 0x80, 0xF0, 0x10, 0xF0,  // 5
+    0xF0, 0x80, 0xF0, 0x90, 0xF0,  // 6
+    0xF0, 0x10, 0x20, 0x40, 0x40,  // 7
+    0xF0, 0x90, 0xF0, 0x90, 0xF0,  // 8
+    0xF0, 0x90, 0xF0, 0x10, 0xF0,  // 9
+    0xF0, 0x90, 0xF0, 0x90, 0x90,  // A
+    0xE0, 0x90, 0xE0, 0x90, 0xE0,  // B
+    0xF0, 0x80, 0x80, 0x80, 0xF0,  // C
+    0xE0, 0x90, 0x90, 0x90, 0xE0,  // D
+    0xF0, 0x80, 0xF0, 0x80, 0xF0,  // E
+    0xF0, 0x80, 0xF0, 0x80, 0x80   // F
+};
 
 namespace CHIP8 {
 
@@ -9,14 +32,21 @@ Chip8CPU::Chip8CPU() {
     display = std::make_unique<Chip8Display>();
     keypad = std::make_unique<Chip8Keypad>();
     stack = std::make_unique<Stack>();
+    mem->loadFontset(fontset, sizeof(fontset));
 }
 
 void Chip8CPU::cycle() {
+    std::cout << "PC: 0x" << std::hex << std::setw(4) << std::setfill('0')
+              << reg->PC << ", Opcode: 0x" << std::hex << std::setw(4)
+              << std::setfill('0')
+              << ((mem->readByte(reg->PC).value_or(0) << 8) |
+                  mem->readByte(reg->PC + 1).value_or(0))
+              << std::endl;
+
     uint8_t high_byte = this->mem->readByte(this->reg->PC).value_or(0);
     uint8_t low_byte = this->mem->readByte(this->reg->PC + 1).value_or(0);
     uint16_t opcode = (high_byte << 8) | low_byte;
 
-    // For easier access
     auto& V = reg->V;
     auto& I = reg->I;
     auto& PC = reg->PC;
@@ -34,18 +64,18 @@ void Chip8CPU::cycle() {
                 case 0xE0:  // 00E0: CLS
                     display->clear();
                     break;
-                case 0xEE:  // 00EE: RET
-                    PC = stack->pop().value_or(0); // Safely unwrap optional
+                case 0xEE:                          // 00EE: RET
+                    PC = stack->pop().value_or(0);  // Safely unwrap optional
                     break;
             }
             break;
         case 0x1000:  // 1NNN: JP addr
             PC = nnn;
-            return; // Return to avoid PC += 2
+            return;   // Return to avoid PC += 2
         case 0x2000:  // 2NNN: CALL addr
             stack->push(PC);
             PC = nnn;
-            return; // Return to avoid PC += 2
+            return;   // Return to avoid PC += 2
         case 0x3000:  // 3XNN: SE Vx, byte
             if (V[x] == nn) PC += 2;
             break;
@@ -63,32 +93,40 @@ void Chip8CPU::cycle() {
             break;
         case 0x8000:
             switch (n) {
-                case 0x0: V[x] = V[y]; break; // 8XY0: LD Vx, Vy
-                case 0x1: V[x] |= V[y]; break; // 8XY1: OR Vx, Vy
-                case 0x2: V[x] &= V[y]; break; // 8XY2: AND Vx, Vy
-                case 0x3: V[x] ^= V[y]; break; // 8XY3: XOR Vx, Vy
-                case 0x4: { // 8XY4: ADD Vx, Vy
+                case 0x0:
+                    V[x] = V[y];
+                    break;  // 8XY0: LD Vx, Vy
+                case 0x1:
+                    V[x] |= V[y];
+                    break;  // 8XY1: OR Vx, Vy
+                case 0x2:
+                    V[x] &= V[y];
+                    break;  // 8XY2: AND Vx, Vy
+                case 0x3:
+                    V[x] ^= V[y];
+                    break;   // 8XY3: XOR Vx, Vy
+                case 0x4: {  // 8XY4: ADD Vx, Vy
                     uint16_t sum = V[x] + V[y];
                     V[0xF] = sum > 255;
                     V[x] = sum & 0xFF;
                     break;
                 }
-                case 0x5: { // 8XY5: SUB Vx, Vy
+                case 0x5: {  // 8XY5: SUB Vx, Vy
                     V[0xF] = V[x] > V[y];
                     V[x] -= V[y];
                     break;
                 }
-                case 0x6: { // 8XY6: SHR Vx
+                case 0x6: {  // 8XY6: SHR Vx
                     V[0xF] = V[x] & 0x1;
                     V[x] >>= 1;
                     break;
                 }
-                case 0x7: { // 8XY7: SUBN Vx, Vy
+                case 0x7: {  // 8XY7: SUBN Vx, Vy
                     V[0xF] = V[y] > V[x];
                     V[x] = V[y] - V[x];
                     break;
                 }
-                case 0xE: { // 8XYE: SHL Vx
+                case 0xE: {  // 8XYE: SHL Vx
                     V[0xF] = (V[x] & 0x80) >> 7;
                     V[x] <<= 1;
                     break;
@@ -103,38 +141,50 @@ void Chip8CPU::cycle() {
             break;
         case 0xB000:  // BNNN: JP V0, addr
             PC = nnn + V[0];
-            return; // Return to avoid PC += 2
-        case 0xC000: { // CXNN: RND Vx, byte
+            return;     // Return to avoid PC += 2
+        case 0xC000: {  // CXNN: RND Vx, byte
             std::random_device rd;
             std::mt19937 gen(rd());
             std::uniform_int_distribution<> distrib(0, 255);
             V[x] = distrib(gen) & nn;
             break;
         }
-        case 0xD000: { // DXYN: DRW Vx, Vy, nibble
+        case 0xD000: {  // DXYN: DRW Vx, Vy, nibble
             const uint8_t* sprite = mem->getRawMemory() + I;
             V[0xF] = display->drawSprite(V[x], V[y], sprite, n);
             break;
         }
         case 0xE000:
             switch (nn) {
-                case 0x9E: // EX9E: SKP Vx
+                case 0x9E:  // EX9E: SKP Vx
                     if (keypad->isKeyPressed(V[x])) PC += 2;
                     break;
-                case 0xA1: // EXA1: SKNP Vx
+                case 0xA1:  // EXA1: SKNP Vx
                     if (!keypad->isKeyPressed(V[x])) PC += 2;
                     break;
             }
             break;
         case 0xF000:
             switch (nn) {
-                case 0x07: V[x] = reg->delay_timer; break; // FX07: LD Vx, DT
-                case 0x0A: V[x] = keypad->waitForKey(); break; // FX0A: LD Vx, K
-                case 0x15: reg->delay_timer = V[x]; break; // FX15: LD DT, Vx
-                case 0x18: reg->sound_timer = V[x]; break; // FX18: LD ST, Vx
-                case 0x1E: I += V[x]; break; // FX1E: ADD I, Vx
-                case 0x29: I = V[x] * 5; break; // FX29: LD F, Vx (Fontset is at 0x0)
-                case 0x33: { // FX33: LD B, Vx
+                case 0x07:
+                    V[x] = reg->delay_timer;
+                    break;  // FX07: LD Vx, DT
+                case 0x0A:
+                    V[x] = keypad->waitForKey();
+                    break;  // FX0A: LD Vx, K
+                case 0x15:
+                    reg->delay_timer = V[x];
+                    break;  // FX15: LD DT, Vx
+                case 0x18:
+                    reg->sound_timer = V[x];
+                    break;  // FX18: LD ST, Vx
+                case 0x1E:
+                    I += V[x];
+                    break;  // FX1E: ADD I, Vx
+                case 0x29:
+                    I = V[x] * 5;
+                    break;    // FX29: LD F, Vx (Fontset is at 0x0)
+                case 0x33: {  // FX33: LD B, Vx
                     uint8_t val = V[x];
                     mem->writeByte(I + 2, val % 10);
                     val /= 10;
@@ -143,13 +193,13 @@ void Chip8CPU::cycle() {
                     mem->writeByte(I, val % 10);
                     break;
                 }
-                case 0x55: { // FX55: LD [I], Vx
+                case 0x55: {  // FX55: LD [I], Vx
                     for (int i = 0; i <= x; ++i) {
                         mem->writeByte(I + i, V[i]);
                     }
                     break;
                 }
-                case 0x65: { // FX65: LD Vx, [I]
+                case 0x65: {  // FX65: LD Vx, [I]
                     for (int i = 0; i <= x; ++i) {
                         V[i] = mem->readByte(I + i).value_or(0);
                     }
@@ -165,8 +215,26 @@ void Chip8CPU::cycle() {
     PC += 2;
 }
 
-void Chip8CPU::loadROM(const std::string& filename) {
-    mem->loadROM(filename);
+bool Chip8CPU::loadROM(const std::string& filename) {
+    return mem->loadROM(filename);
 }
 
+void Chip8CPU::update_timers() {
+    if (reg->delay_timer > 0) {
+        reg->delay_timer--;
+    }
+    if (reg->sound_timer > 0) {
+        reg->sound_timer--;
+        // TODO: Add sound output logic here
+    }
 }
+
+bool Chip8CPU::handle_input() {
+    return keypad->handleInput();
+}
+
+void Chip8CPU::render() {
+    display->render();
+}
+
+}  // namespace CHIP8
