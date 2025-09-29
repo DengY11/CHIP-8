@@ -1,0 +1,32 @@
+[
+{
+  "directory": "/Users/bytedance/code/mycode/chip8/build",
+  "command": "/usr/bin/c++   -std=gnu++2b -arch arm64 -o CMakeFiles/chip8.dir/src/main.cpp.o -c /Users/bytedance/code/mycode/chip8/src/main.cpp",
+  "file": "/Users/bytedance/code/mycode/chip8/src/main.cpp",
+  "output": "CMakeFiles/chip8.dir/src/main.cpp.o"
+},
+{
+  "directory": "/Users/bytedance/code/mycode/chip8/build",
+  "command": "/usr/bin/c++   -std=gnu++2b -arch arm64 -o CMakeFiles/chip8.dir/src/chip8.cpp.o -c /Users/bytedance/code/mycode/chip8/src/chip8.cpp",
+  "file": "/Users/bytedance/code/mycode/chip8/src/chip8.cpp",
+  "output": "CMakeFiles/chip8.dir/src/chip8.cpp.o"
+},
+{
+  "directory": "/Users/bytedance/code/mycode/chip8/build",
+  "command": "/usr/bin/c++   -std=gnu++2b -arch arm64 -o CMakeFiles/chip8.dir/src/memory.cpp.o -c /Users/bytedance/code/mycode/chip8/src/memory.cpp",
+  "file": "/Users/bytedance/code/mycode/chip8/src/memory.cpp",
+  "output": "CMakeFiles/chip8.dir/src/memory.cpp.o"
+},
+{
+  "directory": "/Users/bytedance/code/mycode/chip8/build",
+  "command": "/usr/bin/c++   -std=gnu++2b -arch arm64 -o CMakeFiles/chip8.dir/src/display.cpp.o -c /Users/bytedance/code/mycode/chip8/src/display.cpp",
+  "file": "/Users/bytedance/code/mycode/chip8/src/display.cpp",
+  "output": "CMakeFiles/chip8.dir/src/display.cpp.o"
+},
+{
+  "directory": "/Users/bytedance/code/mycode/chip8/build",
+  "command": "/usr/bin/c++   -std=gnu++2b -arch arm64 -o CMakeFiles/chip8.dir/src/input.cpp.o -c /Users/bytedance/code/mycode/chip8/src/input.cpp",
+  "file": "/Users/bytedance/code/mycode/chip8/src/input.cpp",
+  "output": "CMakeFiles/chip8.dir/src/input.cpp.o"
+}
+]
