@@ -1,6 +1,6 @@
 CHIP-8 virtual machine
 using cpp17 standard
 
-now we have two test file in root directory
-just compile and run them
+now we have three test file in root directory
+just compile the virtual machine and run them
 ./chip8 helloworld.ch8
