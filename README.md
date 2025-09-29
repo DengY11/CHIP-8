@@ -1,2 +1,2 @@
-CHIP-8 Emulator
+CHIP-8 virtual machine
 using cpp17 standard
