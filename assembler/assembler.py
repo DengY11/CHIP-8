@@ -32,10 +32,11 @@ def main():
     # --- Second Pass: Assemble instructions ---
     rom_data = bytearray()
     for instruction in instructions:
-        parts = re.split(r'[\\s,]+', instruction.strip(), maxsplit=1)
+        # Improved instruction parsing
+        parts = instruction.strip().split(maxsplit=1)
         mnemonic = parts[0].upper()
         args_str = parts[1] if len(parts) > 1 else ''
-        args = [arg.strip() for arg in args_str.split(',')] if args_str else []
+        args = [arg.strip() for arg in re.split(r'\s*,\s*', args_str)] if args_str else []
 
         opcode = 0x0000
 
