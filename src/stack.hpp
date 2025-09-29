@@ -9,7 +9,7 @@ static constexpr uint8_t STACK_SIZE = 16;
 class Stack {
 public:
     Stack();
-    ~Stack() = default;
+    void reset();
     bool push(uint16_t value);
     std::optional<uint16_t> pop();
 

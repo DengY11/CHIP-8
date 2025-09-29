@@ -5,6 +5,11 @@
 namespace CHIP8 {
 
 Stack::Stack() : sp(0) {
+    reset();
+}
+
+void Stack::reset() {
+    sp = 0;
     memset(stack, 0, sizeof stack);
 }
 
