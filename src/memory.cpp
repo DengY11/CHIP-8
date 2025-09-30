@@ -7,6 +7,8 @@
 
 namespace CHIP8 {
 
+static constexpr uint16_t ROM_START_ADDR = 0x200;
+
 Memory::Memory() {
     this->mem = std::make_unique<uint8_t[]>(MEM_SIZE);
     memset(mem.get(), 0, MEM_SIZE);
@@ -80,6 +82,16 @@ bool Memory::loadROM(const std::string& filename) {
         return true;
     }
     return false;
+}
+
+void Memory::loadROM(const std::vector<uint8_t>& data) {
+    if (!mem) {
+        mem = std::make_unique<uint8_t[]>(MEM_SIZE);
+    }
+    if (data.size() > MEM_SIZE - ROM_START_ADDR) {
+        return;
+    }
+    std::copy(data.begin(), data.end(), &mem[ROM_START_ADDR]);
 }
 
 const uint8_t* Memory::getRawMemory() const {
