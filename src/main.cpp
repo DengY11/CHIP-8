@@ -26,22 +26,18 @@ int main(int argc, char* argv[]) {
     while (cpu.handle_input()) {
         auto current_time = clock::now();
 
-        // Handle CPU cycles
         if (current_time - last_cycle_time >= cpu_cycle_duration) {
             cpu.cycle();
             last_cycle_time = current_time;
         }
 
-        // Handle timers
         if (current_time - last_timer_time >= timer_duration) {
             cpu.update_timers();
             last_timer_time = current_time;
         }
 
-        // Render the display
         cpu.render();
 
-        // A small delay to prevent busy-waiting
         std::this_thread::sleep_for(std::chrono::microseconds(500));
     }
 

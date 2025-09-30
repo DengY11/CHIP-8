@@ -1,6 +1,10 @@
 #include "chip8.hpp"
-
-#include <iomanip>
+#include "memory.hpp"
+#include "register.hpp"
+#include "stack.hpp"
+#include "display.hpp"
+#include <iomanip> 
+#include "input.hpp"
 #include <iostream>
 #include <random>
 
@@ -26,12 +30,21 @@ static const uint8_t fontset[80] = {
 
 namespace CHIP8 {
 
-Chip8CPU::Chip8CPU() {
+Chip8CPU::Chip8CPU() : Chip8CPU(Chip8Mode::NORMAL) {}
+
+Chip8CPU::Chip8CPU(Chip8Mode mode) {
     mem = std::make_unique<Memory>();
     reg = std::make_unique<Register>();
-    display = std::make_unique<Chip8Display>();
-    keypad = std::make_unique<Chip8Keypad>();
-    stack = std::make_unique<Stack>();
+    
+    stack = std::make_unique<Stack>(reg->SP, stack_array);
+    
+    if (mode == Chip8Mode::NORMAL) {
+        display = std::make_unique<Chip8Display>();
+        keypad = std::make_unique<Chip8Keypad>();
+    } else {
+        display = nullptr;
+        keypad = nullptr;
+    }
     mem->loadFontset(fontset, sizeof(fontset));
 }
 
@@ -62,7 +75,9 @@ void Chip8CPU::cycle() {
         case 0x0000:
             switch (nn) {
                 case 0xE0:  // 00E0: CLS
-                    display->clear();
+                    if (display) {
+                        display->clear();
+                    }
                     break;
                 case 0xEE:                          // 00EE: RET
                     PC = stack->pop().value_or(0);  // Safely unwrap optional
@@ -150,17 +165,19 @@ void Chip8CPU::cycle() {
             break;
         }
         case 0xD000: {  // DXYN: DRW Vx, Vy, nibble
-            const uint8_t* sprite = mem->getRawMemory() + I;
-            V[0xF] = display->drawSprite(V[x], V[y], sprite, n);
+            if (display) {
+                const uint8_t* sprite = mem->getRawMemory() + I;
+                V[0xF] = display->drawSprite(V[x], V[y], sprite, n);
+            }
             break;
         }
         case 0xE000:
             switch (nn) {
                 case 0x9E:  // EX9E: SKP Vx
-                    if (keypad->isKeyPressed(V[x])) PC += 2;
+                    if (keypad && keypad->isKeyPressed(V[x])) PC += 2;
                     break;
                 case 0xA1:  // EXA1: SKNP Vx
-                    if (!keypad->isKeyPressed(V[x])) PC += 2;
+                    if (keypad && !keypad->isKeyPressed(V[x])) PC += 2;
                     break;
             }
             break;
@@ -169,9 +186,14 @@ void Chip8CPU::cycle() {
                 case 0x07:
                     V[x] = reg->delay_timer;
                     break;  // FX07: LD Vx, DT
-                case 0x0A:
-                    V[x] = keypad->waitForKey();
-                    break;  // FX0A: LD Vx, K
+                case 0x0A:  // FX0A: LD Vx, K
+                    if (keypad) {
+                        V[x] = keypad->waitForKey();
+                    } else {
+                        // In test mode, return a default value (e.g., 0)
+                        V[x] = 0;
+                    }
+                    break;
                 case 0x15:
                     reg->delay_timer = V[x];
                     break;  // FX15: LD DT, Vx
@@ -230,11 +252,16 @@ void Chip8CPU::update_timers() {
 }
 
 bool Chip8CPU::handle_input() {
-    return keypad->handleInput();
+    if (keypad) {
+        return keypad->handleInput();
+    }
+    return false;
 }
 
 void Chip8CPU::render() {
-    display->render();
+    if (display) {
+        display->render();
+    }
 }
 
 }  // namespace CHIP8

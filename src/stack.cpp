@@ -1,16 +1,15 @@
 #include "stack.hpp"
-
 #include <cstring>
 
 namespace CHIP8 {
 
-Stack::Stack() : sp(0) {
+Stack::Stack(uint8_t& sp_ref, uint16_t* stack_array) : sp(sp_ref), stack(stack_array) {
     reset();
 }
 
 void Stack::reset() {
     sp = 0;
-    memset(stack, 0, sizeof stack);
+    memset(stack, 0, STACK_SIZE * sizeof(uint16_t));
 }
 
 bool Stack::push(uint16_t value) {
