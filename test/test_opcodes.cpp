@@ -1,6 +1,5 @@
 #include <gtest/gtest.h>
 #include "chip8.hpp"
-#include "memory.hpp"
 #include "test_access.hpp"
 #include <fstream>
 #include <vector>
@@ -18,7 +17,7 @@ protected:
         if (!temp_file.is_open()) return false;
         temp_file.write(reinterpret_cast<const char*>(program.data()), program.size());
         temp_file.close();
-        return cpu->loadROM("test_program.ch8");
+        return CHIP8::Chip8TestAccess::loadROM(*cpu, "test_program.ch8");
     }
 
     std::unique_ptr<CHIP8::Chip8CPU> cpu;
@@ -28,7 +27,7 @@ protected:
 TEST_F(Chip8Test, BasicExecution) {
     std::vector<uint8_t> program = {0x60, 0x42}; // LD V0, 0x42
     ASSERT_TRUE(loadProgram(program));
-    cpu->cycle();
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 0), 0x42);
 }
 
@@ -36,11 +35,11 @@ TEST_F(Chip8Test, BasicExecution) {
 TEST_F(Chip8Test, MultipleInstructions) {
     std::vector<uint8_t> program = {0x60, 0x10, 0x61, 0x20, 0x80, 0x14}; // LD V0, 0x10; LD V1, 0x20; ADD V0, V1
     ASSERT_TRUE(loadProgram(program));
-    cpu->cycle(); // LD V0, 0x10
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 0), 0x10);
-    cpu->cycle(); // LD V1, 0x20
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 1), 0x20);
-    cpu->cycle(); // ADD V0, V1
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 0), 0x30);
 }
 
@@ -48,7 +47,7 @@ TEST_F(Chip8Test, MultipleInstructions) {
 TEST_F(Chip8Test, ROMPathTest) {
     std::vector<uint8_t> program = {0x12, 0x00}; // JP 0x200 (infinite loop)
     ASSERT_TRUE(loadProgram(program));
-    cpu->cycle();
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     SUCCEED();
 }
 
@@ -56,7 +55,7 @@ TEST_F(Chip8Test, ROMPathTest) {
 TEST_F(Chip8Test, EmptyProgram) {
     std::vector<uint8_t> program = {};
     ASSERT_TRUE(loadProgram(program));
-    cpu->cycle();
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     SUCCEED();
 }
 
@@ -64,7 +63,7 @@ TEST_F(Chip8Test, EmptyProgram) {
 TEST_F(Chip8Test, LDVxByte) {
     std::vector<uint8_t> program = {0x60, 0x42};
     ASSERT_TRUE(loadProgram(program));
-    cpu->cycle();
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 0), 0x42);
 }
 
@@ -72,9 +71,9 @@ TEST_F(Chip8Test, LDVxByte) {
 TEST_F(Chip8Test, ADDVxByte) {
     std::vector<uint8_t> program = {0x61, 0x10, 0x71, 0x20};
     ASSERT_TRUE(loadProgram(program));
-    cpu->cycle(); // LD V1, 0x10
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 1), 0x10);
-    cpu->cycle(); // ADD V1, 0x20
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 1), 0x30);
 }
 
@@ -82,11 +81,11 @@ TEST_F(Chip8Test, ADDVxByte) {
 TEST_F(Chip8Test, LDVxVy) {
     std::vector<uint8_t> program = {0x60, 0x10, 0x61, 0x20, 0x80, 0x10};
     ASSERT_TRUE(loadProgram(program));
-    cpu->cycle(); // LD V0, 0x10
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 0), 0x10);
-    cpu->cycle(); // LD V1, 0x20
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 1), 0x20);
-    cpu->cycle(); // LD V0, V1
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 0), 0x20);
 }
 
@@ -94,11 +93,11 @@ TEST_F(Chip8Test, LDVxVy) {
 TEST_F(Chip8Test, ADDVxVy) {
     std::vector<uint8_t> program = {0x60, 0x10, 0x61, 0x20, 0x80, 0x14};
     ASSERT_TRUE(loadProgram(program));
-    cpu->cycle(); // LD V0, 0x10
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 0), 0x10);
-    cpu->cycle(); // LD V1, 0x20
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 1), 0x20);
-    cpu->cycle(); // ADD V0, V1
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 0), 0x30);
 }
 
@@ -106,11 +105,11 @@ TEST_F(Chip8Test, ADDVxVy) {
 TEST_F(Chip8Test, SUBVxVy) {
     std::vector<uint8_t> program = {0x60, 0x30, 0x61, 0x10, 0x80, 0x15};
     ASSERT_TRUE(loadProgram(program));
-    cpu->cycle(); // LD V0, 0x30
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 0), 0x30);
-    cpu->cycle(); // LD V1, 0x10
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 1), 0x10);
-    cpu->cycle(); // SUB V0, V1
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 0), 0x20);
 }
 
@@ -118,11 +117,11 @@ TEST_F(Chip8Test, SUBVxVy) {
 TEST_F(Chip8Test, ANDVxVy) {
     std::vector<uint8_t> program = {0x60, 0x0F, 0x61, 0xF0, 0x80, 0x12};
     ASSERT_TRUE(loadProgram(program));
-    cpu->cycle(); // LD V0, 0x0F
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 0), 0x0F);
-    cpu->cycle(); // LD V1, 0xF0
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 1), 0xF0);
-    cpu->cycle(); // AND V0, V1
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 0), 0x00);
 }
 
@@ -130,11 +129,11 @@ TEST_F(Chip8Test, ANDVxVy) {
 TEST_F(Chip8Test, ORVxVy) {
     std::vector<uint8_t> program = {0x60, 0x0F, 0x61, 0xF0, 0x80, 0x11};
     ASSERT_TRUE(loadProgram(program));
-    cpu->cycle(); // LD V0, 0x0F
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 0), 0x0F);
-    cpu->cycle(); // LD V1, 0xF0
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 1), 0xF0);
-    cpu->cycle(); // OR V0, V1
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 0), 0xFF);
 }
 
@@ -142,11 +141,11 @@ TEST_F(Chip8Test, ORVxVy) {
 TEST_F(Chip8Test, XORVxVy) {
     std::vector<uint8_t> program = {0x60, 0x0F, 0x61, 0xFF, 0x80, 0x13};
     ASSERT_TRUE(loadProgram(program));
-    cpu->cycle(); // LD V0, 0x0F
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 0), 0x0F);
-    cpu->cycle(); // LD V1, 0xFF
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 1), 0xFF);
-    cpu->cycle(); // XOR V0, V1
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 0), 0xF0);
 }
 
@@ -154,9 +153,9 @@ TEST_F(Chip8Test, XORVxVy) {
 TEST_F(Chip8Test, SHRVx) {
     std::vector<uint8_t> program = {0x60, 0x09, 0x80, 0x06};
     ASSERT_TRUE(loadProgram(program));
-    cpu->cycle(); // LD V0, 0x09
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 0), 0x09);
-    cpu->cycle(); // SHR V0
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 0), 0x04);
 }
 
@@ -164,9 +163,9 @@ TEST_F(Chip8Test, SHRVx) {
 TEST_F(Chip8Test, SHLVx) {
     std::vector<uint8_t> program = {0x60, 0x88, 0x80, 0x0E};
     ASSERT_TRUE(loadProgram(program));
-    cpu->cycle(); // LD V0, 0x88
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 0), 0x88);
-    cpu->cycle(); // SHL V0
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 0), 0x10);
 }
 
@@ -174,11 +173,11 @@ TEST_F(Chip8Test, SHLVx) {
 TEST_F(Chip8Test, SUBNVxVy) {
     std::vector<uint8_t> program = {0x60, 0x10, 0x61, 0x30, 0x80, 0x17};
     ASSERT_TRUE(loadProgram(program));
-    cpu->cycle(); // LD V0, 0x10
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 0), 0x10);
-    cpu->cycle(); // LD V1, 0x30
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 1), 0x30);
-    cpu->cycle(); // SUBN V0, V1
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 0), 0x20);
 }
 
@@ -186,7 +185,7 @@ TEST_F(Chip8Test, SUBNVxVy) {
 TEST_F(Chip8Test, JPAddr) {
     std::vector<uint8_t> program = {0x14, 0x00};
     ASSERT_TRUE(loadProgram(program));
-    cpu->cycle(); // JP 0x400
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     EXPECT_EQ(CHIP8::Chip8TestAccess::getPC(*cpu), 0x400);
 }
 
@@ -194,15 +193,13 @@ TEST_F(Chip8Test, JPAddr) {
 TEST_F(Chip8Test, CALLAndRET) {
     std::vector<uint8_t> program = {0x23, 0x00, 0x00, 0x00, 0x00, 0xEE};
     ASSERT_TRUE(loadProgram(program));
-    cpu->cycle(); // CALL 0x300
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     EXPECT_EQ(CHIP8::Chip8TestAccess::getPC(*cpu), 0x300);
     EXPECT_EQ(CHIP8::Chip8TestAccess::getSP(*cpu), 1);
-    
-    // Manually set up the RET instruction at 0x300
     CHIP8::Chip8TestAccess::setMemory(*cpu, 0x300, 0x00);
     CHIP8::Chip8TestAccess::setMemory(*cpu, 0x301, 0xEE);
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     
-    cpu->cycle(); // RET
     EXPECT_EQ(CHIP8::Chip8TestAccess::getPC(*cpu), 0x202);
     EXPECT_EQ(CHIP8::Chip8TestAccess::getSP(*cpu), 0);
 }
@@ -211,11 +208,11 @@ TEST_F(Chip8Test, CALLAndRET) {
 TEST_F(Chip8Test, SEVxByte) {
     std::vector<uint8_t> program = {0x62, 0x50, 0x32, 0x50};
     ASSERT_TRUE(loadProgram(program));
-    cpu->cycle(); // LD V2, 0x50
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 2), 0x50);
     uint16_t pc_before = CHIP8::Chip8TestAccess::getPC(*cpu);
-    cpu->cycle(); // SE V2, 0x50
-    // PC should skip by 4 since V2 == 0x50 (normal +2 + skip +2)
+    CHIP8::Chip8TestAccess::cycle(*cpu);
+    // PC should skip by 4 since V2 == 0x50 (case +2 + switch +2)
     EXPECT_EQ(CHIP8::Chip8TestAccess::getPC(*cpu), pc_before + 4);
 }
 
@@ -223,11 +220,11 @@ TEST_F(Chip8Test, SEVxByte) {
 TEST_F(Chip8Test, SNEVxByte) {
     std::vector<uint8_t> program = {0x63, 0x60, 0x43, 0x61};
     ASSERT_TRUE(loadProgram(program));
-    cpu->cycle(); // LD V3, 0x60
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 3), 0x60);
     uint16_t pc_before = CHIP8::Chip8TestAccess::getPC(*cpu);
-    cpu->cycle(); // SNE V3, 0x61
-    // PC should skip by 4 since V3 != 0x61 (normal +2 + skip +2)
+    CHIP8::Chip8TestAccess::cycle(*cpu);
+    // PC should skip by 4 since V3 != 0x61 (case +2 + switch +2)
     EXPECT_EQ(CHIP8::Chip8TestAccess::getPC(*cpu), pc_before + 4);
 }
 
@@ -235,13 +232,13 @@ TEST_F(Chip8Test, SNEVxByte) {
 TEST_F(Chip8Test, SEVxVy) {
     std::vector<uint8_t> program = {0x60, 0x50, 0x61, 0x50, 0x50, 0x10};
     ASSERT_TRUE(loadProgram(program));
-    cpu->cycle(); // LD V0, 0x50
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 0), 0x50);
-    cpu->cycle(); // LD V1, 0x50
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 1), 0x50);
     uint16_t pc_before = CHIP8::Chip8TestAccess::getPC(*cpu);
-    cpu->cycle(); // SE V0, V1
-    // PC should skip by 4 since V0 == V1 (normal +2 + skip +2)
+    CHIP8::Chip8TestAccess::cycle(*cpu);
+    // PC should skip by 4 since V0 == V1 (case +2 + switch +2)
     EXPECT_EQ(CHIP8::Chip8TestAccess::getPC(*cpu), pc_before + 4);
 }
 
@@ -249,13 +246,13 @@ TEST_F(Chip8Test, SEVxVy) {
 TEST_F(Chip8Test, SNEVxVy) {
     std::vector<uint8_t> program = {0x60, 0x50, 0x61, 0x60, 0x90, 0x10};
     ASSERT_TRUE(loadProgram(program));
-    cpu->cycle(); // LD V0, 0x50
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 0), 0x50);
-    cpu->cycle(); // LD V1, 0x60
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 1), 0x60);
     uint16_t pc_before = CHIP8::Chip8TestAccess::getPC(*cpu);
-    cpu->cycle(); // SNE V0, V1
-    // PC should skip by 4 since V0 != V1 (normal +2 + skip +2)
+    CHIP8::Chip8TestAccess::cycle(*cpu);
+    // PC should skip by 4 since V0 != V1 (case +2 + switch +2)
     EXPECT_EQ(CHIP8::Chip8TestAccess::getPC(*cpu), pc_before + 4);
 }
 
@@ -263,7 +260,7 @@ TEST_F(Chip8Test, SNEVxVy) {
 TEST_F(Chip8Test, LDIAddr) {
     std::vector<uint8_t> program = {0xA3, 0x00};
     ASSERT_TRUE(loadProgram(program));
-    cpu->cycle(); // LD I, 0x300
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterI(*cpu), 0x300);
 }
 
@@ -271,8 +268,7 @@ TEST_F(Chip8Test, LDIAddr) {
 TEST_F(Chip8Test, CLS) {
     std::vector<uint8_t> program = {0x00, 0xE0};
     ASSERT_TRUE(loadProgram(program));
-    cpu->cycle(); // CLS
-    // We can't directly test if the display was cleared, but the instruction should execute
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     SUCCEED();
 }
 
@@ -280,9 +276,9 @@ TEST_F(Chip8Test, CLS) {
 TEST_F(Chip8Test, JPV0Addr) {
     std::vector<uint8_t> program = {0x60, 0x10, 0xB2, 0x00};
     ASSERT_TRUE(loadProgram(program));
-    cpu->cycle(); // LD V0, 0x10
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 0), 0x10);
-    cpu->cycle(); // JP V0, 0x200
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     EXPECT_EQ(CHIP8::Chip8TestAccess::getPC(*cpu), 0x210); // 0x200 + 0x10
 }
 
@@ -290,8 +286,7 @@ TEST_F(Chip8Test, JPV0Addr) {
 TEST_F(Chip8Test, RNDVxByte) {
     std::vector<uint8_t> program = {0xC0, 0xFF};
     ASSERT_TRUE(loadProgram(program));
-    cpu->cycle(); // RND V0, 0xFF
-    // We can't predict the random value, but the instruction should execute
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     SUCCEED();
 }
 
@@ -299,12 +294,11 @@ TEST_F(Chip8Test, RNDVxByte) {
 TEST_F(Chip8Test, DRWVxVyNibble) {
     std::vector<uint8_t> program = {0x60, 0x10, 0x61, 0x20, 0xD0, 0x15};
     ASSERT_TRUE(loadProgram(program));
-    cpu->cycle(); // LD V0, 0x10
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 0), 0x10);
-    cpu->cycle(); // LD V1, 0x20
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 1), 0x20);
-    cpu->cycle(); // DRW V0, V1, 5
-    // We can't directly test the display, but the instruction should execute
+    CHIP8::Chip8TestAccess::cycle(*cpu);
     SUCCEED();
 }
 
@@ -312,10 +306,10 @@ TEST_F(Chip8Test, DRWVxVyNibble) {
 TEST_F(Chip8Test, SKPVx) {
     std::vector<uint8_t> program = {0x60, 0x01, 0xE0, 0x9E};
     ASSERT_TRUE(loadProgram(program));
-    cpu->cycle(); // LD V0, 0x01
+    CHIP8::Chip8TestAccess::cycle(*cpu); // LD V0, 0x01
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 0), 0x01);
     uint16_t pc_before = CHIP8::Chip8TestAccess::getPC(*cpu);
-    cpu->cycle(); // SKP V0
+    CHIP8::Chip8TestAccess::cycle(*cpu); // SKP V0
     // We can't simulate key press, so PC will not skip
     EXPECT_EQ(CHIP8::Chip8TestAccess::getPC(*cpu), pc_before + 2);
 }
@@ -324,10 +318,10 @@ TEST_F(Chip8Test, SKPVx) {
 TEST_F(Chip8Test, SKNPVx) {
     std::vector<uint8_t> program = {0x60, 0x01, 0xE0, 0xA1};
     ASSERT_TRUE(loadProgram(program));
-    cpu->cycle(); // LD V0, 0x01
+    CHIP8::Chip8TestAccess::cycle(*cpu); // LD V0, 0x01
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 0), 0x01);
     uint16_t pc_before = CHIP8::Chip8TestAccess::getPC(*cpu);
-    cpu->cycle(); // SKNP V0
+    CHIP8::Chip8TestAccess::cycle(*cpu); // SKNP V0
     // We can't simulate key press, so PC will skip
     EXPECT_EQ(CHIP8::Chip8TestAccess::getPC(*cpu), pc_before + 2);
 }
@@ -338,7 +332,7 @@ TEST_F(Chip8Test, LDVxDT) {
     ASSERT_TRUE(loadProgram(program));
     // Set delay timer to a known value
     // This requires direct access to the register, which we don't have in the test
-    cpu->cycle(); // LD V0, DT
+    CHIP8::Chip8TestAccess::cycle(*cpu); // LD V0, DT
     // We can't predict the delay timer value, but the instruction should execute
     SUCCEED();
 }
@@ -347,7 +341,7 @@ TEST_F(Chip8Test, LDVxDT) {
 TEST_F(Chip8Test, LDVxK) {
     std::vector<uint8_t> program = {0xF0, 0x0A};
     ASSERT_TRUE(loadProgram(program));
-    cpu->cycle(); // LD V0, K
+    CHIP8::Chip8TestAccess::cycle(*cpu); // LD V0, K
     // This instruction waits for a key press, so we can't test it directly
     SUCCEED();
 }
@@ -356,9 +350,9 @@ TEST_F(Chip8Test, LDVxK) {
 TEST_F(Chip8Test, LDDTVx) {
     std::vector<uint8_t> program = {0x60, 0x10, 0xF0, 0x15};
     ASSERT_TRUE(loadProgram(program));
-    cpu->cycle(); // LD V0, 0x10
+    CHIP8::Chip8TestAccess::cycle(*cpu); // LD V0, 0x10
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 0), 0x10);
-    cpu->cycle(); // LD DT, V0
+    CHIP8::Chip8TestAccess::cycle(*cpu); // LD DT, V0
     // We can't directly test the delay timer, but the instruction should execute
     SUCCEED();
 }
@@ -367,9 +361,9 @@ TEST_F(Chip8Test, LDDTVx) {
 TEST_F(Chip8Test, LDSTVx) {
     std::vector<uint8_t> program = {0x60, 0x10, 0xF0, 0x18};
     ASSERT_TRUE(loadProgram(program));
-    cpu->cycle(); // LD V0, 0x10
+    CHIP8::Chip8TestAccess::cycle(*cpu); // LD V0, 0x10
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 0), 0x10);
-    cpu->cycle(); // LD ST, V0
+    CHIP8::Chip8TestAccess::cycle(*cpu); // LD ST, V0
     // We can't directly test the sound timer, but the instruction should execute
     SUCCEED();
 }
@@ -378,11 +372,11 @@ TEST_F(Chip8Test, LDSTVx) {
 TEST_F(Chip8Test, ADDIVx) {
     std::vector<uint8_t> program = {0xA0, 0x10, 0x60, 0x20, 0xF0, 0x1E};
     ASSERT_TRUE(loadProgram(program));
-    cpu->cycle(); // LD I, 0x10
+    CHIP8::Chip8TestAccess::cycle(*cpu); // LD I, 0x10
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterI(*cpu), 0x10);
-    cpu->cycle(); // LD V0, 0x20
+    CHIP8::Chip8TestAccess::cycle(*cpu); // LD V0, 0x20
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 0), 0x20);
-    cpu->cycle(); // ADD I, V0
+    CHIP8::Chip8TestAccess::cycle(*cpu); // ADD I, V0
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterI(*cpu), 0x30);
 }
 
@@ -390,9 +384,9 @@ TEST_F(Chip8Test, ADDIVx) {
 TEST_F(Chip8Test, LDFVx) {
     std::vector<uint8_t> program = {0x60, 0x05, 0xF0, 0x29};
     ASSERT_TRUE(loadProgram(program));
-    cpu->cycle(); // LD V0, 0x05
+    CHIP8::Chip8TestAccess::cycle(*cpu); // LD V0, 0x05
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 0), 0x05);
-    cpu->cycle(); // LD F, V0
+    CHIP8::Chip8TestAccess::cycle(*cpu); // LD F, V0
     // Font address for digit 5 is 5 * 5 = 25 (0x19)
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterI(*cpu), 0x19);
 }
@@ -401,9 +395,9 @@ TEST_F(Chip8Test, LDFVx) {
 TEST_F(Chip8Test, LDBVx) {
     std::vector<uint8_t> program = {0x60, 0xFF, 0xF0, 0x33};
     ASSERT_TRUE(loadProgram(program));
-    cpu->cycle(); // LD V0, 0xFF
+    CHIP8::Chip8TestAccess::cycle(*cpu); // LD V0, 0xFF
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 0), 0xFF);
-    cpu->cycle(); // LD B, V0
+    CHIP8::Chip8TestAccess::cycle(*cpu); // LD B, V0
     // BCD of 255 is 2 5 5
     // Memory at I should be 2, I+1 should be 5, I+2 should be 5
     // We can't directly test memory without access, but the instruction should execute
@@ -414,13 +408,13 @@ TEST_F(Chip8Test, LDBVx) {
 TEST_F(Chip8Test, LDIVx) {
     std::vector<uint8_t> program = {0x60, 0x10, 0x61, 0x20, 0xA0, 0x00, 0xF1, 0x55};
     ASSERT_TRUE(loadProgram(program));
-    cpu->cycle(); // LD V0, 0x10
+    CHIP8::Chip8TestAccess::cycle(*cpu); // LD V0, 0x10
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 0), 0x10);
-    cpu->cycle(); // LD V1, 0x20
+    CHIP8::Chip8TestAccess::cycle(*cpu); // LD V1, 0x20
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterV(*cpu, 1), 0x20);
-    cpu->cycle(); // LD I, 0x00
+    CHIP8::Chip8TestAccess::cycle(*cpu); // LD I, 0x00
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterI(*cpu), 0x00);
-    cpu->cycle(); // LD [I], V1
+    CHIP8::Chip8TestAccess::cycle(*cpu); // LD [I], V1
     // Memory at 0x00 should be 0x10, memory at 0x01 should be 0x20
     // We can't directly test memory without access, but the instruction should execute
     SUCCEED();
@@ -430,9 +424,9 @@ TEST_F(Chip8Test, LDIVx) {
 TEST_F(Chip8Test, LDVxI) {
     std::vector<uint8_t> program = {0xA0, 0x00, 0xF1, 0x65};
     ASSERT_TRUE(loadProgram(program));
-    cpu->cycle(); // LD I, 0x00
+    CHIP8::Chip8TestAccess::cycle(*cpu); // LD I, 0x00
     EXPECT_EQ(CHIP8::Chip8TestAccess::getRegisterI(*cpu), 0x00);
-    cpu->cycle(); // LD Vx, [I]
+    CHIP8::Chip8TestAccess::cycle(*cpu); // LD Vx, [I]
     // We can't predict the values loaded, but the instruction should execute
     SUCCEED();
 }

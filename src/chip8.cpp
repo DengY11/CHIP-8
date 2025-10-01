@@ -7,6 +7,7 @@
 #include "input.hpp"
 #include <iostream>
 #include <random>
+#include <thread>
 
 // Fontset for CHIP-8
 static const uint8_t fontset[80] = {
@@ -46,6 +47,34 @@ Chip8CPU::Chip8CPU(Chip8Mode mode) {
         keypad = nullptr;
     }
     mem->loadFontset(fontset, sizeof(fontset));
+}
+
+Chip8CPU::Chip8CPU(Chip8Mode mode,const std::string& rom_path) : Chip8CPU(mode) {
+    if (!loadROM(rom_path)) {
+        throw std::runtime_error("Failed to load ROM: " + rom_path);
+    }
+}
+
+void Chip8CPU::run() {
+    using clock = std::chrono::high_resolution_clock;
+    auto last_cycle_time = clock::now();
+    auto last_timer_time = clock::now();
+    const std::chrono::duration<double> cpu_cycle_duration(1.0 /
+                                                           500.0);   // 500 Hz
+    const std::chrono::duration<double> timer_duration(1.0 / 60.0);  // 60 Hz
+    while (handle_input()) {
+        auto current_time = clock::now();
+        if (current_time - last_cycle_time >= cpu_cycle_duration) {
+           cycle();
+            last_cycle_time = current_time;
+        }
+        if (current_time - last_timer_time >= timer_duration) {
+           update_timers();
+            last_timer_time = current_time;
+        }
+       render();
+        std::this_thread::sleep_for(std::chrono::microseconds(500));
+    }
 }
 
 void Chip8CPU::cycle() {
