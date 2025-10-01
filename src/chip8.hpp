@@ -1,6 +1,6 @@
 #pragma once
-#include <string>
 #include <memory>
+#include <string>
 
 #include "display.hpp"
 #include "input.hpp"
@@ -10,10 +10,7 @@
 #include "test_access.hpp"
 
 namespace CHIP8 {
-enum class Chip8Mode {
-    NORMAL ,
-    TEST 
-};
+enum class Chip8Mode { NORMAL, TEST };
 class Chip8CPU {
 public:
     Chip8CPU();
@@ -24,10 +21,11 @@ public:
     Chip8CPU(Chip8CPU&&) = default;
     Chip8CPU& operator=(Chip8CPU&&) = default;
 
-    Chip8CPU(Chip8Mode mode,const std::string& rom_path);
+    Chip8CPU(Chip8Mode mode, const std::string& rom_path);
 
     ~Chip8CPU() = default;
     void run();
+
 private:
     void cycle();
     bool loadROM(const std::string& filename);
@@ -40,8 +38,8 @@ private:
     std::unique_ptr<Chip8Display> display;
     std::unique_ptr<Chip8Keypad> keypad;
     std::unique_ptr<Stack> stack;
-    uint16_t stack_array[16]; // Stack storage array
-    
+    uint16_t stack_array[16];  // Stack storage array
+
     friend class Chip8TestAccess;
 };
 }  // namespace CHIP8

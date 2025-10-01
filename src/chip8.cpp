@@ -1,13 +1,15 @@
 #include "chip8.hpp"
-#include "memory.hpp"
-#include "register.hpp"
-#include "stack.hpp"
-#include "display.hpp"
-#include <iomanip> 
-#include "input.hpp"
+
+#include <iomanip>
 #include <iostream>
 #include <random>
 #include <thread>
+
+#include "display.hpp"
+#include "input.hpp"
+#include "memory.hpp"
+#include "register.hpp"
+#include "stack.hpp"
 
 // Fontset for CHIP-8
 static const uint8_t fontset[80] = {
@@ -31,14 +33,15 @@ static const uint8_t fontset[80] = {
 
 namespace CHIP8 {
 
-Chip8CPU::Chip8CPU() : Chip8CPU(Chip8Mode::NORMAL) {}
+Chip8CPU::Chip8CPU() : Chip8CPU(Chip8Mode::NORMAL) {
+}
 
 Chip8CPU::Chip8CPU(Chip8Mode mode) {
     mem = std::make_unique<Memory>();
     reg = std::make_unique<Register>();
-    
+
     stack = std::make_unique<Stack>(reg->SP, stack_array);
-    
+
     if (mode == Chip8Mode::NORMAL) {
         display = std::make_unique<Chip8Display>();
         keypad = std::make_unique<Chip8Keypad>();
@@ -49,7 +52,8 @@ Chip8CPU::Chip8CPU(Chip8Mode mode) {
     mem->loadFontset(fontset, sizeof(fontset));
 }
 
-Chip8CPU::Chip8CPU(Chip8Mode mode,const std::string& rom_path) : Chip8CPU(mode) {
+Chip8CPU::Chip8CPU(Chip8Mode mode, const std::string& rom_path)
+    : Chip8CPU(mode) {
     if (!loadROM(rom_path)) {
         throw std::runtime_error("Failed to load ROM: " + rom_path);
     }
@@ -65,14 +69,14 @@ void Chip8CPU::run() {
     while (handle_input()) {
         auto current_time = clock::now();
         if (current_time - last_cycle_time >= cpu_cycle_duration) {
-           cycle();
+            cycle();
             last_cycle_time = current_time;
         }
         if (current_time - last_timer_time >= timer_duration) {
-           update_timers();
+            update_timers();
             last_timer_time = current_time;
         }
-       render();
+        render();
         std::this_thread::sleep_for(std::chrono::microseconds(500));
     }
 }

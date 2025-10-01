@@ -1,6 +1,7 @@
 #include "debugger.hpp"
-namespace CHIP8{
+namespace CHIP8 {
 
-Debugger::Debugger(Chip8CPU& cpu) : cpu(cpu) {}
-
+Debugger::Debugger(Chip8CPU& cpu) : cpu(cpu) {
 }
+
+}  // namespace CHIP8
