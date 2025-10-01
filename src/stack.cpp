@@ -1,9 +1,11 @@
 #include "stack.hpp"
+
 #include <cstring>
 
 namespace CHIP8 {
 
-Stack::Stack(uint8_t& sp_ref, uint16_t* stack_array) : sp(sp_ref), stack(stack_array) {
+Stack::Stack(uint8_t& sp_ref, uint16_t* stack_array)
+    : sp(sp_ref), stack(stack_array) {
     reset();
 }
 
