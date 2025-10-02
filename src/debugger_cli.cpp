@@ -7,10 +7,8 @@
 
 namespace CHIP8 {
 
-// 全局原子变量，用于信号处理
 std::atomic<bool> g_should_exit(false);
 
-// 信号处理函数
 void signal_handler(int signal) {
     if (signal == SIGINT) {
         std::cout << "\nReceived Ctrl+C, exiting..." << std::endl;
@@ -19,7 +17,6 @@ void signal_handler(int signal) {
 }
 
 DebuggerCLI::DebuggerCLI(Debugger& debugger) : debugger(debugger) {
-    // 注册信号处理函数
     std::signal(SIGINT, signal_handler);
 }
 
@@ -31,14 +28,10 @@ void DebuggerCLI::run() {
     std::string input;
     while (!g_should_exit) {
         printPrompt();
-        
-        // 检查 SDL 窗口是否关闭
         if (debugger.isWindowClosed()) {
             std::cout << "SDL window closed, exiting..." << std::endl;
             break;
         }
-        
-        // 非阻塞读取输入，支持 Ctrl+D
         if (!std::getline(std::cin, input)) {
             if (std::cin.eof()) {
                 std::cout << "\nReceived Ctrl+D, exiting..." << std::endl;
@@ -59,7 +52,7 @@ void DebuggerCLI::run() {
 
 void DebuggerCLI::printPrompt() {
     std::cout << "(chip8dbg) ";
-    std::cout.flush();  // 确保提示符立即显示
+    std::cout.flush();  
 }
 
 bool DebuggerCLI::parseCommand(const std::string& input) {
