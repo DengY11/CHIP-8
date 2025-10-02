@@ -29,3 +29,6 @@ For example:
 
 <img width="636" height="314" alt="image" src="https://github.com/user-attachments/assets/5616e7eb-b547-455c-a945-0e1622cfff00" />
 
+Debugger:
+
+<img width="501" height="313" alt="image" src="https://github.com/user-attachments/assets/a82ebd54-34f1-40eb-b938-2ad403f0d344" />
