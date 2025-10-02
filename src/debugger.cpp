@@ -25,30 +25,45 @@ bool Debugger::hasBreakpoint(uint16_t addr) const {
     return breakpoints.count(addr);
 }
 
+bool Debugger::isWindowClosed() {
+    if (CHIP8::Chip8TestAccess::handle_input(cpu) == false) {
+        return true;  
+    }
+    return false;
+}
+
 void Debugger::step() {
     uint16_t current_pc = CHIP8::Chip8TestAccess::getPC(cpu);
     if (breakpoints.count(current_pc)) {
         std::cout << "Breakpoint hit at 0x" << std::hex << current_pc << std::endl;
-        return;  
+        return; 
+    }
+    
+    if (!CHIP8::Chip8TestAccess::handle_input(cpu)) {
+        std::cout << "SDL window closed during step" << std::endl;
+        return;
     }
     
     CHIP8::Chip8TestAccess::cycle(cpu);
     CHIP8::Chip8TestAccess::update_timers(cpu);
-    CHIP8::Chip8TestAccess::handle_input(cpu);
     CHIP8::Chip8TestAccess::render(cpu);
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
 }
 
 void Debugger::continueExecution() {
     while (true) {
+        if (!CHIP8::Chip8TestAccess::handle_input(cpu)) {
+            std::cout << "SDL window closed during continue" << std::endl;
+            break;
+        }
+        
         uint16_t current_pc = CHIP8::Chip8TestAccess::getPC(cpu);
         if (breakpoints.count(current_pc)) {
             std::cout << "Breakpoint hit at 0x" << std::hex << current_pc << std::endl;
-            break;  
+            break; 
         }
         CHIP8::Chip8TestAccess::cycle(cpu);
         CHIP8::Chip8TestAccess::update_timers(cpu);
-        CHIP8::Chip8TestAccess::handle_input(cpu);
         CHIP8::Chip8TestAccess::render(cpu);
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
