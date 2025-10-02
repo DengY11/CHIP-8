@@ -2,22 +2,55 @@
 #include <iostream>
 #include <sstream>
 #include <iomanip>
+#include <csignal>
+#include <atomic>
 
 namespace CHIP8 {
 
+// 全局原子变量，用于信号处理
+std::atomic<bool> g_should_exit(false);
+
+// 信号处理函数
+void signal_handler(int signal) {
+    if (signal == SIGINT) {
+        std::cout << "\nReceived Ctrl+C, exiting..." << std::endl;
+        g_should_exit = true;
+    }
+}
+
 DebuggerCLI::DebuggerCLI(Debugger& debugger) : debugger(debugger) {
+    // 注册信号处理函数
+    std::signal(SIGINT, signal_handler);
 }
 
 void DebuggerCLI::run() {
     std::cout << "CHIP-8 Debugger CLI" << std::endl;
     std::cout << "Type 'help' for available commands" << std::endl;
+    std::cout << "Press Ctrl+C to exit" << std::endl;
+    
     std::string input;
-    while (true) {
+    while (!g_should_exit) {
         printPrompt();
-        std::getline(std::cin, input);
+        
+        // 检查 SDL 窗口是否关闭
+        if (debugger.isWindowClosed()) {
+            std::cout << "SDL window closed, exiting..." << std::endl;
+            break;
+        }
+        
+        // 非阻塞读取输入，支持 Ctrl+D
+        if (!std::getline(std::cin, input)) {
+            if (std::cin.eof()) {
+                std::cout << "\nReceived Ctrl+D, exiting..." << std::endl;
+                break;
+            }
+            continue;
+        }
+        
         if (input.empty()) {
             continue;
         }
+        
         if (!parseCommand(input)) {
             break; 
         }
@@ -26,6 +59,7 @@ void DebuggerCLI::run() {
 
 void DebuggerCLI::printPrompt() {
     std::cout << "(chip8dbg) ";
+    std::cout.flush();  // 确保提示符立即显示
 }
 
 bool DebuggerCLI::parseCommand(const std::string& input) {

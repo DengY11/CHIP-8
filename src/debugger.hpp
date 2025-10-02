@@ -21,14 +21,18 @@ public:
     
     void step();
     void continueExecution();
+    void setStepping(bool enable);
     bool isAtBreakpoint() const;
     
     std::unique_ptr<Register> inspectRegister();
     void memoryDump(uint16_t start_addr, uint16_t end_addr);
+    
+    bool isWindowClosed();
 
 private:
     Chip8CPU& cpu;
     std::unordered_set<uint16_t> breakpoints;
+    bool stepping = false;
 };
 
 }  // namespace CHIP8
