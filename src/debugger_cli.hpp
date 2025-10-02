@@ -21,7 +21,6 @@ private:
     void printPrompt();
     bool parseCommand(const std::string& input);
     
-    // 命令处理函数
     void handleStep(const std::vector<std::string>& args);
     void handleContinue(const std::vector<std::string>& args);
     void handleBreakpoint(const std::vector<std::string>& args);
